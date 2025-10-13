@@ -1,33 +1,33 @@
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // íconos bonitos
 
-export default function BottomToolbar() {
+export default function BottomToolbar({ onPressLeft }) {
     return (
         <View style={styles.container}>
             {/* Sección izquierda (3 botones) */}
             <View style={styles.leftGroup}>
-                <TouchableOpacity style={styles.button}>
-                    <Ionicons name="home-outline" size={24} color="black" />
-                    <Text style={styles.label}>Inicio</Text>
+                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('nota')}>
+                    <Ionicons name="document-text-sharp" size={24} color="black" />
+                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Ionicons name="search-outline" size={24} color="black" />
-                    <Text style={styles.label}>Buscar</Text>
+                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('lista')}>
+                    <Ionicons name="list-sharp" size={24} color="black" />
+                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Ionicons name="heart-outline" size={24} color="black" />
-                    <Text style={styles.label}>Favoritos</Text>
+                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('cuenta')}>
+                    <Ionicons name="calculator-sharp" size={24} color="black" />
+                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
             </View>
             {/* Sección derecha (2 botones) */}
             <View style={styles.rightGroup}>
                 <TouchableOpacity style={styles.button}>
-                    <Ionicons name="chatbubble-outline" size={24} color="black" />
-                    <Text style={styles.label}>Mensajes</Text>
+                    <Ionicons name="close-outline" size={24} color="black" />
+                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}>
-                    <Ionicons name="person-outline" size={24} color="black" />
-                    <Text style={styles.label}>Perfil</Text>
+                    <Ionicons name="checkmark-outline" size={24} color="black" />
+                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
             </View>
         </View>
