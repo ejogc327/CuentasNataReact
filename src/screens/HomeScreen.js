@@ -3,12 +3,14 @@ import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomToolbar from '../components/BottomToolbar';
 import CustomModal from '../components/CustomModal';
+import ListItem from '../components/ListItem';
 
 export default function HomeScreen({ navigation }) {
-    const [items, setItems] = useState([]); // Lista de títulos
+    const [items, setItems] = useState([]); // Lista de items
     const [modalVisible, setModalVisible] = useState(false);
     const [currentButton, setCurrentButton] = useState('');
     const [inputText, setInputText] = useState('');
+    const [showCheckboxes, setShowCheckboxes] = useState(false);
 
     // Abrir el modal
     const handleButtonPress = (buttonName) => {
@@ -17,16 +19,43 @@ export default function HomeScreen({ navigation }) {
         setModalVisible(true);
     };
 
+
+    const handleRightButtonPress = (buttonName) => {
+        // Al presionar un botón del lado derecho, ocultamos los checkboxes
+        setShowCheckboxes(false);
+        console.log(`Botón derecho presionado: ${buttonName}`);
+    }
     // Guardar el título
     const handleSave = () => {
         if (inputText.trim() !== '') {
-            setItems([...items, { id: Date.now().toString(), title: inputText }]);
+            setItems([
+                ...items, 
+                { 
+                    id: Date.now().toString(), 
+                    title: inputText ,
+                    source: currentButton, // Guarda de qué botón vino
+                    checked: false,
+                }
+            ]);
         }
         setModalVisible(false);
     }
 
     // Cerrar sin guardar
     const handleCancel = () => setModalVisible(false);
+
+    // Lista
+    const toggleCheckbox = (id) => {
+        setItems(
+            items.map((item) =>
+                item.id === id ? { ...item, checked: !item.checked } : item
+            )
+        )
+    }
+
+    const handleLongPress = () => {
+        setShowCheckboxes(true);
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -35,7 +64,14 @@ export default function HomeScreen({ navigation }) {
                 <FlatList
                     data={items}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <Text style={styles.item}>{item.title}</Text>}
+                    renderItem={({ item }) => (
+                        <ListItem
+                            item={item}
+                            showCheckboxes={showCheckboxes}
+                            onLongPress={handleLongPress}
+                            onToggle={toggleCheckbox}
+                        />
+                    )}
                     ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
                 />
 
@@ -52,7 +88,10 @@ export default function HomeScreen({ navigation }) {
                 
                 {/* Barra inferior */}
                 <View style={styles.toolbarContainer}>
-                    <BottomToolbar onPressLeft={handleButtonPress} />
+                    <BottomToolbar 
+                        onPressLeft={handleButtonPress} 
+                        onPressRight={handleRightButtonPress}
+                    />
                 </View>
             </View>
         </SafeAreaView>
@@ -68,10 +107,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'space-between', // empuja el toolbar abajo
         marginLeft: 10,
-    },
-    item: {
-        fontSize: 18,
-        marginVertical: 6,
     },
     empty: {
         textAlign: 'center',

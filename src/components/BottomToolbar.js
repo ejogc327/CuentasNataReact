@@ -1,33 +1,28 @@
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // íconos bonitos
 
-export default function BottomToolbar({ onPressLeft }) {
+export default function BottomToolbar({ onPressLeft, onPressRight }) {
     return (
         <View style={styles.container}>
             {/* Sección izquierda (3 botones) */}
             <View style={styles.leftGroup}>
                 <TouchableOpacity style={styles.button} onPress={() => onPressLeft('nota')}>
                     <Ionicons name="document-text-sharp" size={24} color="black" />
-                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => onPressLeft('lista')}>
                     <Ionicons name="list-sharp" size={24} color="black" />
-                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => onPressLeft('cuenta')}>
                     <Ionicons name="calculator-sharp" size={24} color="black" />
-                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
             </View>
             {/* Sección derecha (2 botones) */}
             <View style={styles.rightGroup}>
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={() => onPressRight('cancel')}>
                     <Ionicons name="close-outline" size={24} color="black" />
-                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={() => onPressRight('save')}>
                     <Ionicons name="checkmark-outline" size={24} color="black" />
-                    <Text style={styles.label}></Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -52,7 +47,7 @@ const styles = StyleSheet.create({
     },
     rightGroup: {
         flexDirection: 'row',
-        alignItems: 'center',
+        // alignItems: 'center',
         gap: 20,
     },
     button: {
