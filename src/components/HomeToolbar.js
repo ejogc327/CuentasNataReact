@@ -1,29 +1,35 @@
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // íconos bonitos
 
-export default function BottomToolbar({ onPressLeft, onPressRight }) {
+export default function HomeToolbar({ onPressLeft, onPressRight, selectionMode }) {
     return (
         <View style={styles.container}>
             {/* Sección izquierda (3 botones) */}
             <View style={styles.leftGroup}>
-                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('nota')}>
+                {/* Botones izquierdos (se deshabilitan en modo selección) */}
+                <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('nota')}>
                     <Ionicons name="document-text-sharp" size={24} color="black" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('lista')}>
+                <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('lista')}>
                     <Ionicons name="list-sharp" size={24} color="black" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => onPressLeft('cuenta')}>
+                <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('cuenta')}>
                     <Ionicons name="calculator-sharp" size={24} color="black" />
                 </TouchableOpacity>
             </View>
             {/* Sección derecha (2 botones) */}
             <View style={styles.rightGroup}>
-                <TouchableOpacity style={styles.button} onPress={() => onPressRight('cancel')}>
-                    <Ionicons name="close-outline" size={24} color="black" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => onPressRight('save')}>
-                    <Ionicons name="checkmark-outline" size={24} color="black" />
-                </TouchableOpacity>
+                {/* Botones derechos (solo visibles en modo selección) */}
+                {selectionMode && (
+                    <>
+                        <TouchableOpacity style={styles.button} onPress={() => onPressRight('cancel')}>
+                            <Ionicons name="close-outline" size={24} color="black" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.button} onPress={() => onPressRight('save')}>
+                            <Ionicons name="checkmark-outline" size={24} color="black" />
+                        </TouchableOpacity>
+                    </>
+                )}
             </View>
         </View>
     );
@@ -56,4 +62,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 12,
     },
+    disabled : {
+        opacity: 0.4,
+    }
 });

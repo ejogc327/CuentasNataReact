@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 
 export default function ListItem({ item, showCheckboxes, onLongPress, onToggle }) {
     const getIconName = () => {
@@ -16,25 +17,33 @@ export default function ListItem({ item, showCheckboxes, onLongPress, onToggle }
         }
     };
 
+    const handlePress = () => {
+        if (showCheckboxes) {
+            onToggle(item.id);
+        } else {
+            console.log(`Abrir detalle de: ${item.title}`);
+        }
+    }
+
     return (
-        <View style={styles.itemContainer}>
-            {showCheckboxes && (
-                <Checkbox
-                    value={item.checked}
-                    onValueChange={() => onToggle(item.id)}
-                    style={styles.checkbox}
-                />
-            )}
-            <TouchableOpacity 
-                onLongPress={() => onLongPress(item.id)}  
-                delayLongPress={600}
-                style={{ flex: 1 }}
-                activeOpacity={0.7}
-            >
+        <TouchableOpacity
+        onPress={handlePress}
+            onLongPress={() => onLongPress(item.id)} 
+            delayLongPress={400}
+            activeOpacity={0.7}
+        >
+            <View style={styles.itemContainer}>
+                {showCheckboxes && (
+                    <Checkbox
+                        value={item.checked}
+                        onValueChange={() => onToggle(item.id)}
+                        style={styles.checkbox}
+                    />
+                )}            
                 <Text style={styles.label}>{item.title}</Text>
-            </TouchableOpacity>
                 <Ionicons name={getIconName()} size={24} color="#333"/>
-        </View>
+            </View>
+        </TouchableOpacity>
     );
 }
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomToolbar from '../components/BottomToolbar';
+import HomeToolbar from '../components/HomeToolbar';
+import SelectionToolbar from '../components/SelectionToolbar';
 import CustomModal from '../components/CustomModal';
 import ListItem from '../components/ListItem';
 
@@ -10,7 +11,8 @@ export default function HomeScreen({ navigation }) {
     const [modalVisible, setModalVisible] = useState(false);
     const [currentButton, setCurrentButton] = useState('');
     const [inputText, setInputText] = useState('');
-    const [showCheckboxes, setShowCheckboxes] = useState(false);
+    const [selectionMode, setSelectionMode] = useState(false);
+    // const [showCheckboxes, setShowCheckboxes] = useState(false);
 
     // Abrir el modal
     const handleButtonPress = (buttonName) => {
@@ -18,13 +20,6 @@ export default function HomeScreen({ navigation }) {
         setInputText('');
         setModalVisible(true);
     };
-
-
-    const handleRightButtonPress = (buttonName) => {
-        // Al presionar un botón del lado derecho, ocultamos los checkboxes
-        setShowCheckboxes(false);
-        console.log(`Botón derecho presionado: ${buttonName}`);
-    }
     // Guardar el título
     const handleSave = () => {
         if (inputText.trim() !== '') {
@@ -54,67 +49,110 @@ export default function HomeScreen({ navigation }) {
     }
 
     const handleLongPress = () => {
-        setShowCheckboxes(true);
+        setSelectionMode(true);
     }
 
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                {/* Lista de títulos */}
-                <FlatList
-                    data={items}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <ListItem
-                            item={item}
-                            showCheckboxes={showCheckboxes}
-                            onLongPress={handleLongPress}
-                            onToggle={toggleCheckbox}
-                        />
-                    )}
-                    ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
-                />
+    // === Toolbar ===
+    const handleRightButtonPress = (buttonName) => {
+        // Al presionar un botón del lado derecho, ocultamos los checkboxes
+        setSelectionMode(false);
+        // Desmarcamos todos los ítems
+        setItems(items.map((i) => ({ ...i, checked: false })));
+        console.log(`Botón derecho presionado: ${buttonName}`);
+    }
 
-                {/* Modal de entrada */ }
-                <CustomModal
-                    visible={modalVisible}
-                    title={`Nueva ${currentButton}`}
-                    description={`Agrega el título de la ${currentButton}`}
-                    inputValue={inputText}
-                    onChangeText={setInputText}
-                    onCancel={handleCancel}
-                    onSave={handleSave}
-                />
-                
-                {/* Barra inferior */}
+    const handleClear = () => {
+        setSelectionMode(false);
+        setItems(items.map((i) => ({ ...i, checked: false })));
+    }
+
+    const handleAction = (type) => {
+        console.log('Acción desde toolbar superior:', type);
+    }
+
+    const selectedCount = items.filter((i) => i.checked).length;
+
+    return (
+        <View style={styles.container}>
+            {/* Lista de títulos */}
+            <FlatList
+                data={items}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <ListItem
+                        item={item}
+                        showCheckboxes={selectionMode}
+                        onLongPress={handleLongPress}
+                        onToggle={toggleCheckbox}
+                    />
+                )}
+                ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
+                contentContainerStyle={{ paddingBottom:120}}
+            />
+
+            {/* Modal de entrada */ }
+            <CustomModal
+                visible={modalVisible}
+                title={`Nueva ${currentButton}`}
+                description={`Agrega el título de la ${currentButton}`}
+                inputValue={inputText}
+                onChangeText={setInputText}
+                onCancel={handleCancel}
+                onSave={handleSave}
+            />
+
+            <SafeAreaView style={styles.safeArea}>
                 <View style={styles.toolbarContainer}>
-                    <BottomToolbar 
+                    {/* Toolbar de selección */}
+                    {selectionMode && (
+                        <View style={styles.selectionToolbarContainer}>
+                            <SelectionToolbar
+                                selectedCount={selectedCount}
+                                onClear={handleClear}
+                                onAction={handleAction}
+                            />
+                        </View>
+                    )}
+                    
+                    {/* Barra inferior */}
+                    {/* <View style={styles.toolbarContainer}> */}
+                    <HomeToolbar 
                         onPressLeft={handleButtonPress} 
                         onPressRight={handleRightButtonPress}
+                        selectionMode={selectionMode}
                     />
                 </View>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#f9f9f9',
-    },
     container: {
         flex: 1,
         justifyContent: 'space-between', // empuja el toolbar abajo
         marginLeft: 10,
+        backgroundColor: '#f9f9f9',
     },
     empty: {
         textAlign: 'center',
         color: '#777',
         marginTop: 20,
     },
+    safeArea: {        
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: "transparent",
+    },
     toolbarContainer: {
-        borderTopWidth: 1,
-        borderTopColor: '#ccc',
-    },    
+        position: "relative",
+    },
+    selectionToolbarContainer: {
+        position: "absolute",
+        bottom: 56, // altura del toolbar base
+        left: 0,
+        right: 0,
+    },
 });
