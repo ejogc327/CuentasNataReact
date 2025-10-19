@@ -3,7 +3,7 @@ import Checkbox from 'expo-checkbox';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 
-export default function ListItem({ item, showCheckboxes, onLongPress, onToggle }) {
+export default function ListItem({ item, showCheckboxes, onLongPress, onToggle, onPress }) {
     const getIconName = () => {
         switch (item.source) {
             case 'nota':
@@ -22,12 +22,13 @@ export default function ListItem({ item, showCheckboxes, onLongPress, onToggle }
             onToggle(item.id);
         } else {
             console.log(`Abrir detalle de: ${item.title}`);
+            onPress(item.source);
         }
     }
 
     return (
         <TouchableOpacity
-        onPress={handlePress}
+            onPress={handlePress}
             onLongPress={() => onLongPress(item.id)} 
             delayLongPress={400}
             activeOpacity={0.7}

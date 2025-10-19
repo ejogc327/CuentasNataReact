@@ -12,10 +12,27 @@ export default function HomeScreen({ navigation }) {
     const [currentButton, setCurrentButton] = useState('');
     const [inputText, setInputText] = useState('');
     const [selectionMode, setSelectionMode] = useState(false);
+    const [pages, setPages] = useState([
+        { id: '1', title: 'Notas', type: 'note' },
+        { id: '2', title: 'Listas', type: 'list' },
+        { id: '3', title: 'Cuentas', type: 'account' },
+    ]);
     // const [showCheckboxes, setShowCheckboxes] = useState(false);
 
     // Abrir el modal
-    const handleButtonPress = (buttonName) => {
+    const handleButtonPress = (source) => {
+        console.log("Presionando botón..." + source);
+        if (source === 'nota') navigation.navigate('Nota', { title: pages.title });
+        if (source === 'lista') navigation.navigate('Lista', { title: pages.title });
+        if (source === 'cuenta') navigation.navigate('Cuenta', { title: pages.title });
+        
+    };
+
+    // Abrir el modal
+    const handleLeftButtonPress = (buttonName) => {
+        //if (pages.type === 'note') navigation.navigate('Note', { title: item.title });
+        //if (pages.type === 'list') navigation.navigate('List', { title: item.title });
+        //if (pages.type === 'account') navigation.navigate('Account', { title: item.title });
         setCurrentButton(buttonName);
         setInputText('');
         setModalVisible(true);
@@ -84,6 +101,7 @@ export default function HomeScreen({ navigation }) {
                         showCheckboxes={selectionMode}
                         onLongPress={handleLongPress}
                         onToggle={toggleCheckbox}
+                        onPress={handleButtonPress}
                     />
                 )}
                 ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
@@ -117,7 +135,7 @@ export default function HomeScreen({ navigation }) {
                     {/* Barra inferior */}
                     {/* <View style={styles.toolbarContainer}> */}
                     <HomeToolbar 
-                        onPressLeft={handleButtonPress} 
+                        onPressLeft={handleLeftButtonPress} 
                         onPressRight={handleRightButtonPress}
                         selectionMode={selectionMode}
                     />
