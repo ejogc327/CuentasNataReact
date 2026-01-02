@@ -1,26 +1,25 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAppData, saveAppData } from '../utils/storage';
+import ScreenHeader from '../components/ScreenHeader';
 
-export default function AccountScreen({ route }) {
-    const { title } = route.params;
+export default function AccountScreen({ route, navigation }) {
+    const [title, setTitle] = useState(route.params.title);
     const [accounts, setAccounts] = useState([]);
+
     useEffect(() => {
-        const loadAccounts = async () => {
-            try {
-                const saved = await AsyncStorage.getItem('accountItems');
-                if (saved) {
-                    setAccounts(JSON.parse(saved));
-                }
-            } catch (e) {
-                console.log('Error loading accounts', e);
-            }
+        const load = async () => {
+            const data = await getAppData();
+            if (data.account) setAccounts(data.account);
         };
-        loadAccounts();
+        load();
     }, []);
+
     useEffect(() => {
-        AsyncStorage.setItem('accountItems', JSON.stringify(accounts)).catch(e => console.log('Save error', e));
+        saveAppData({ account: accounts });
     }, [accounts]);
 
     const addAccount = () => {
@@ -32,67 +31,108 @@ export default function AccountScreen({ route }) {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>{title}</Text>
-            <TouchableOpacity onPress={addAccount} style={styles.addButton}>
-                <Text style={styles.addText}>＋ Añadir cuenta</Text>
-            </TouchableOpacity>
-            <FlatList
-                data={accounts}
-                keyExtractor={(i) => i.id}
-                renderItem={({ item }) => (
-                    <View style={styles.row}>
-                        <TouchableOpacity style={styles.dropdown}>
-                            <Text>⮟</Text>
-                        </TouchableOpacity>
-                        <Checkbox
-                            value={item.checked}
-                            onValueChange={(v) => updateAccount(item.id, 'checked', v)}
-                        />
-                        <TextInput
-                            style={styles.textInput}
-                            placeholder="Descripción"
-                            value={item.text}
-                            onChangeText={(t) => updateAccount(item.id, 'text', t)}
-                        />
-                        <TextInput
-                            style={styles.numInput}
-                            placeholder="Valor"
-                            keyboardType="numeric"
-                            value={String(item.value)}
-                            onChangeText={(v) => updateAccount(item.id, 'value', v)}
-                        />
-                        <Checkbox
-                            value={item.include}
-                            onValueChange={(v) => updateAccount(item.id, 'include', v)}
-                        />
-                    </View>
-                )}
+        <SafeAreaView style={styles.safeArea}>
+            <ScreenHeader 
+                navigation={navigation}
+                icon="document-text-sharp"
+                title={title}
+                setTitle={setTitle}
             />
-        </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+            >
+                <View style={styles.container}>
+                    <TouchableOpacity onPress={addAccount} style={styles.addButton}>
+                        <Text style={styles.addText}>＋ Añadir cuenta</Text>
+                    </TouchableOpacity>
+                    <FlatList
+                        data={accounts}
+                        keyExtractor={(i) => i.id}
+                        renderItem={({ item }) => (
+                            <View style={styles.row}>
+                                <TouchableOpacity style={styles.dropdown}>
+                                    <Text>⮟</Text>
+                                </TouchableOpacity>
+                                <Checkbox
+                                    value={item.checked}
+                                    onValueChange={(v) => updateAccount(item.id, 'checked', v)}
+                                />
+                                <TextInput
+                                    style={styles.textInput}
+                                    placeholder="Descripción"
+                                    value={item.text}
+                                    onChangeText={(t) => updateAccount(item.id, 'text', t)}
+                                />
+                                <TextInput
+                                    style={styles.numInput}
+                                    placeholder="Valor"
+                                    keyboardType="numeric"
+                                    value={String(item.value)}
+                                    onChangeText={(v) => updateAccount(item.id, 'value', v)}
+                                />
+                                <Checkbox
+                                    value={item.include}
+                                    onValueChange={(v) => updateAccount(item.id, 'include', v)}
+                                />
+                            </View>
+                        )}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20 },
-    header: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-    addButton: {
-        backgroundColor: '#4CAF50', borderRadius: 10,
-        paddingVertical: 10, alignItems: 'center', marginBottom: 10,
+    safeArea: {        
+        flex: 1,
+        backgroundColor: '#fff',        
     },
-    addText: { color: '#fff', fontSize: 16 },
+    container: { 
+        flex: 1, 
+        padding: 20 
+
+    },
+    addButton: {
+        backgroundColor: '#4CAF50', 
+        borderRadius: 10,
+        paddingVertical: 10, 
+        alignItems: 'center', 
+        marginBottom: 10,
+    },
+    addText: { color: '#fff', 
+        fontSize: 16 
+
+    },
     row: {
-        flexDirection: 'row', alignItems: 'center',
-        borderBottomWidth: 1, borderColor: '#eee',
+        flexDirection: 'row', 
+        alignItems: 'center',
+        borderBottomWidth: 1, 
+        borderColor: '#eee',
         paddingVertical: 8,
     },
-    dropdown: { marginRight: 10 },
+    dropdown: { 
+        marginRight: 10 
+
+    },
     textInput: {
-        flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-        paddingHorizontal: 8, marginHorizontal: 6, fontSize: 14,
+        flex: 1, 
+        borderWidth: 1, 
+        borderColor: '#ccc', 
+        borderRadius: 8,
+        paddingHorizontal: 8, 
+        marginHorizontal: 6, 
+        fontSize: 14,
     },
     numInput: {
-        width: 80, borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-        paddingHorizontal: 6, fontSize: 14, marginRight: 6,
+        width: 80, 
+        borderWidth: 1, 
+        borderColor: '#ccc', 
+        borderRadius: 8,
+        paddingHorizontal: 6, 
+        fontSize: 14, 
+        marginRight: 6,
     },
 });

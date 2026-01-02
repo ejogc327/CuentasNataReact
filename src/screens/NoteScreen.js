@@ -1,51 +1,66 @@
 import { useState, useEffect } from "react";
-import { View, TextInput, StyleSheet, Text } from 'react-native';
+import { View, TextInput, StyleSheet, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAppData, saveAppData } from '../utils/storage';
+import ScreenHeader from '../components/ScreenHeader';
 
-export default function NoteScreen({ route }) {
-    const { title } = route.params;
+export default function NoteScreen({ route, navigation }) {
+    const [title, setTitle] = useState(route.params.title);
     const [text, setText] = useState('');
+
     useEffect(() => {
-        const loadNote = async () => {
-            try {
-                const saved = await AsyncStorage.getItem('noteText');
-                if (saved) {
-                    setText(saved);
-                }
-            } catch (e) {
-                console.log('Error loading note', e);
-            }
+        const load = async () => {
+            const data = await getAppData();
+            if (data.note) setText(data.note);
         };
-        loadNote();
+        load();
     }, []);
+
     useEffect(() => {
-        AsyncStorage.setItem('noteText', text).catch(e => console.log('Save error', e));
+        saveAppData({ note: text, noteTitle:title });
     }, [text]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>{title}</Text>
-            <TextInput 
-                style={styles.input}
-                multiline
-                placeholder="Escribe tus notas aquí..."
-                value={text}
-                onChangeText={setText}
+        <SafeAreaView style={styles.safeArea}>
+            <ScreenHeader 
+                navigation={navigation}
+                icon="document-text-sharp"
+                title={title}
+                setTitle={setTitle}
             />
-        </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+            >
+                <View style={styles.container}>
+                    <TextInput 
+                        style={styles.input}
+                        multiline
+                        placeholder="Escribe tus notas aquí..."
+                        value={text}
+                        onChangeText={setText}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  input: {
-    flex: 1,
-    textAlignVertical: 'top',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 10,
-  },
+    safeArea: {                
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    container: { 
+        flex: 1, 
+        padding: 10 
+    },
+    input: {
+        flex: 1,
+        textAlignVertical: 'top',
+        fontSize: 16,
+        padding: 5,
+    },
 });

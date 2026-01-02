@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getAppData, saveAppData } from '../utils/storage';
 import HomeToolbar from '../components/HomeToolbar';
 import SelectionToolbar from '../components/SelectionToolbar';
 import CustomModal from '../components/CustomModal';
@@ -17,22 +18,33 @@ export default function HomeScreen({ navigation }) {
         { id: '2', title: 'Listas', type: 'list' },
         { id: '3', title: 'Cuentas', type: 'account' },
     ]);
-    // const [showCheckboxes, setShowCheckboxes] = useState(false);
+
+    // Cargar los ítems al entrar al home
+    useEffect(() => {
+        const load = async () => {
+            const data = await getAppData();
+            if (data.homeItems) {
+                setItems(data.homeItems);
+            }
+        };
+        load();
+    }, []);
+
+    // Guardar ítems cada vez que cambian
+    useEffect(() => {
+        saveAppData({ homeItems: items });
+    }, [items]);
 
     // Abrir el modal
-    const handleButtonPress = (source) => {
-        console.log("Presionando botón..." + source);
-        if (source === 'nota') navigation.navigate('Nota', { title: pages.title });
-        if (source === 'lista') navigation.navigate('Lista', { title: pages.title });
-        if (source === 'cuenta') navigation.navigate('Cuenta', { title: pages.title });
+    const handleButtonPress = (source, title) => {
+        if (source === 'nota') navigation.navigate('Nota', { title });
+        if (source === 'lista') navigation.navigate('Lista', { title });
+        if (source === 'cuenta') navigation.navigate('Cuenta', { title });
         
     };
 
     // Abrir el modal
     const handleLeftButtonPress = (buttonName) => {
-        //if (pages.type === 'note') navigation.navigate('Note', { title: item.title });
-        //if (pages.type === 'list') navigation.navigate('List', { title: item.title });
-        //if (pages.type === 'account') navigation.navigate('Account', { title: item.title });
         setCurrentButton(buttonName);
         setInputText('');
         setModalVisible(true);
@@ -90,36 +102,36 @@ export default function HomeScreen({ navigation }) {
     const selectedCount = items.filter((i) => i.checked).length;
 
     return (
-        <View style={styles.container}>
-            {/* Lista de títulos */}
-            <FlatList
-                data={items}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ListItem
-                        item={item}
-                        showCheckboxes={selectionMode}
-                        onLongPress={handleLongPress}
-                        onToggle={toggleCheckbox}
-                        onPress={handleButtonPress}
-                    />
-                )}
-                ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
-                contentContainerStyle={{ paddingBottom:120}}
-            />
+        <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+            <View style={styles.container}>
+                {/* Lista de títulos */}
+                <FlatList
+                    data={items}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <ListItem
+                            item={item}
+                            showCheckboxes={selectionMode}
+                            onLongPress={handleLongPress}
+                            onToggle={toggleCheckbox}
+                            onPress={handleButtonPress}
+                        />
+                    )}
+                    ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
+                    contentContainerStyle={{ paddingBottom:120}}
+                />
 
-            {/* Modal de entrada */ }
-            <CustomModal
-                visible={modalVisible}
-                title={`Nueva ${currentButton}`}
-                description={`Agrega el título de la ${currentButton}`}
-                inputValue={inputText}
-                onChangeText={setInputText}
-                onCancel={handleCancel}
-                onSave={handleSave}
-            />
+                {/* Modal de entrada */ }
+                <CustomModal
+                    visible={modalVisible}
+                    title={`Nueva ${currentButton}`}
+                    description={`Agrega el título de la ${currentButton}`}
+                    inputValue={inputText}
+                    onChangeText={setInputText}
+                    onCancel={handleCancel}
+                    onSave={handleSave}
+                />
 
-            <SafeAreaView style={styles.safeArea}>
                 <View style={styles.toolbarContainer}>
                     {/* Toolbar de selección */}
                     {selectionMode && (
@@ -140,29 +152,23 @@ export default function HomeScreen({ navigation }) {
                         selectionMode={selectionMode}
                     />
                 </View>
-            </SafeAreaView>
-        </View>
+            </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {        
+        flex: 1,
+        backgroundColor: '#fff',
+    },
     container: {
         flex: 1,
-        justifyContent: 'space-between', // empuja el toolbar abajo
-        marginLeft: 10,
-        backgroundColor: '#f9f9f9',
     },
     empty: {
         textAlign: 'center',
         color: '#777',
         marginTop: 20,
-    },
-    safeArea: {        
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: "transparent",
     },
     toolbarContainer: {
         position: "relative",

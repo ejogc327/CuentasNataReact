@@ -12,9 +12,9 @@ export default function AppNavigator() {
         <NavigationContainer>
             <Stack.Navigator initialRouteName="Home">
                 <Stack.Screen name="Home" component={HomeScreen} options={{title: 'Inicio' }} />
-                <Stack.Screen name="Nota" component={NoteScreen} options={{title: 'Nota' }} />
-                <Stack.Screen name="Lista" component={ListScreen} options={{title: 'Lista' }} />
-                <Stack.Screen name="Cuenta" component={AccountScreen} options={{title: 'Cuenta' }} />
+                <Stack.Screen name="Nota" component={NoteScreen} options={{title: 'Nota', headerShown: false }} />
+                <Stack.Screen name="Lista" component={ListScreen} options={{title: 'Lista', headerShown: false  }} />
+                <Stack.Screen name="Cuenta" component={AccountScreen} options={{title: 'Cuenta', headerShown: false  }} />
             </Stack.Navigator>
         </NavigationContainer>
     );

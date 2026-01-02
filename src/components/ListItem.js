@@ -21,15 +21,14 @@ export default function ListItem({ item, showCheckboxes, onLongPress, onToggle, 
         if (showCheckboxes) {
             onToggle(item.id);
         } else {
-            console.log(`Abrir detalle de: ${item.title}`);
-            onPress(item.source);
+            onPress(item.source, item.title);
         }
     }
 
     return (
         <TouchableOpacity
             onPress={handlePress}
-            onLongPress={() => onLongPress(item.id)} 
+            onLongPress={() => onLongPress()} 
             delayLongPress={400}
             activeOpacity={0.7}
         >
