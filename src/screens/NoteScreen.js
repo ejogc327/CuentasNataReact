@@ -4,22 +4,46 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
+import NoteToolbar from '../components/NoteToolbar';
 
 export default function NoteScreen({ route, navigation }) {
-    const [title, setTitle] = useState(route.params.title);
+    const { id, title: initialTitle } = route.params;
+    const [title, setTitle] = useState(initialTitle);
     const [text, setText] = useState('');
 
     useEffect(() => {
         const load = async () => {
             const data = await getAppData();
-            if (data.note) setText(data.note);
+            if (data.notes && data.notes[id]) {
+                setText(data.notes[id].text);
+                setTitle(data.notes[id].title);
+            }
         };
         load();
     }, []);
 
     useEffect(() => {
-        saveAppData({ note: text, noteTitle:title });
-    }, [text]);
+        if (!id) return; // asegura que exista un ID
+        const save = async () => {
+            // Obtén las notas actuales
+            const current = await getAppData();
+
+            // Actualiza solo la nota actual por id
+            const updatedNotes = {
+                ...current.notes,         // merge de notas existentes
+                [id]: { text, title }     // solo actualiza la nota actual
+            };
+
+            await saveAppData({ notes: updatedNotes });
+        };
+
+        save();
+    }, [text, title, id]);
+
+    const handleSave = () => {
+        saveAppData({ nota: text, notaTitle: title });
+        navigation.goBack();
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -43,6 +67,7 @@ export default function NoteScreen({ route, navigation }) {
                         onChangeText={setText}
                     />
                 </View>
+                <NoteToolbar onSave={handleSave} onClear={handleClear} />
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

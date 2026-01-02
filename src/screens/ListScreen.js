@@ -7,25 +7,42 @@ import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
 
 export default function ListScreen({ route, navigation }) {
-    const [title, setTitle] = useState(route.params.title);
+    const { id, title: initialTitle } = route.params;
+    const [title, setTitle] = useState(initialTitle);
     const [items, setItems] = useState([]);
     const [text, setText] = useState('');
     
     useEffect(() => {
         const load = async () => {
             const data = await getAppData();
-            if (data.list) setItems(data.list);
+            if (data.lists?.[id]) {
+                setItems(data.lists[id].items || []);
+                setTitle(data.lists[id].title || initialTitle);
+            }
         };
         load();
     }, []);
 
     useEffect(() => {
-        saveAppData({ list: items, listTitle:title });
-    }, [items]);
+        if (!id) return;
+
+        const save = async () => {
+            const current = await getAppData();
+            const updatedLists = {
+                ...current.lists,
+                [id]: { title, items }
+            };
+            await saveAppData({ lists: updatedLists });
+        };
+
+        save();
+    }, [items, title]);
 
     const addItem = () => {
         if (!text.trim()) return;
-        setItems([...items, { id: Date.now().toString(), text, checked: false }]);
+        const newId = Date.now().toString();
+        const newItem = { id: newId, text: text, checked: false };
+        setItems((prev) => [...prev, newItem]);
         setText('');
     };
 

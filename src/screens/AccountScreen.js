@@ -7,20 +7,33 @@ import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
 
 export default function AccountScreen({ route, navigation }) {
-    const [title, setTitle] = useState(route.params.title);
+    const { id, title: initialTitle } = route.params;
+    const [title, setTitle] = useState(initialTitle);
     const [accounts, setAccounts] = useState([]);
 
     useEffect(() => {
         const load = async () => {
             const data = await getAppData();
-            if (data.account) setAccounts(data.account);
+            if (data.accounts?.[id]) {
+                setAccounts(data.accounts[id].items || []);
+                setTitle(data.accounts[id].title || initialTitle);
+            }
         };
         load();
     }, []);
 
     useEffect(() => {
-        saveAppData({ account: accounts });
-    }, [accounts]);
+        if (!id) return;
+        const save = async () => {
+            const data = await getAppData();
+            const updatedAccounts = {
+                ...data.accounts,
+                [id]: { title, items: accounts }
+            };
+            await saveAppData({ accounts: updatedAccounts });
+        };
+        save();
+    }, [accounts, title]);
 
     const addAccount = () => {
         setAccounts([...accounts, { id: Date.now().toString(), text: '', value: '', checked: false, include: false }]);

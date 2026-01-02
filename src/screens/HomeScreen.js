@@ -36,10 +36,11 @@ export default function HomeScreen({ navigation }) {
     }, [items]);
 
     // Abrir el modal
-    const handleButtonPress = (source, title) => {
-        if (source === 'nota') navigation.navigate('Nota', { title });
-        if (source === 'lista') navigation.navigate('Lista', { title });
-        if (source === 'cuenta') navigation.navigate('Cuenta', { title });
+    const handleButtonPress = (source, item) => {
+        if (!item?.id) return;
+        if (source === 'nota') navigation.navigate('Nota', { title: item.title, id: item.id });
+        if (source === 'lista') navigation.navigate('Lista', { title: item.title, id: item.id });
+        if (source === 'cuenta') navigation.navigate('Cuenta', { title: item.title, id: item.id });
         
     };
 
@@ -51,17 +52,24 @@ export default function HomeScreen({ navigation }) {
     };
     // Guardar el título
     const handleSave = () => {
-        if (inputText.trim() !== '') {
-            setItems([
-                ...items, 
-                { 
-                    id: Date.now().toString(), 
-                    title: inputText ,
-                    source: currentButton, // Guarda de qué botón vino
-                    checked: false,
-                }
-            ]);
-        }
+        if (!inputText.trim()) return;
+
+        const newId = Date.now().toString(); // ID único
+        const newItem = {
+            id: newId,
+            title: inputText,
+            source: currentButton,
+            checked: false
+        };
+        //const newItems = [...items, newItem]; // array actualizado
+
+        // Guardar en el estado
+        setItems((prev) => [...prev, newItem]);
+
+        // Guardar en AsyncStorage
+        //saveAppData({ homeItems: newItems });
+
+        // Cerrar modal
         setModalVisible(false);
     }
 
@@ -87,7 +95,7 @@ export default function HomeScreen({ navigation }) {
         setSelectionMode(false);
         // Desmarcamos todos los ítems
         setItems(items.map((i) => ({ ...i, checked: false })));
-        console.log(`Botón derecho presionado: ${buttonName}`);
+        //console.log(`Botón derecho presionado: ${buttonName}`);
     }
 
     const handleClear = () => {
@@ -114,10 +122,12 @@ export default function HomeScreen({ navigation }) {
                             showCheckboxes={selectionMode}
                             onLongPress={handleLongPress}
                             onToggle={toggleCheckbox}
-                            onPress={handleButtonPress}
+                            onPress={() => handleButtonPress(item.source, item)}
                         />
                     )}
-                    ListEmptyComponent={<Text style={styles.empty}>Aún no hay títulos guardados</Text>}
+                    ListEmptyComponent={
+                        <Text style={styles.empty}>Aún no hay títulos guardados</Text>
+                    }
                     contentContainerStyle={{ paddingBottom:120}}
                 />
 
