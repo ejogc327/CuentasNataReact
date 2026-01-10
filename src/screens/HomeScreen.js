@@ -6,6 +6,7 @@ import HomeToolbar from '../components/HomeToolbar';
 import SelectionToolbar from '../components/SelectionToolbar';
 import CustomModal from '../components/CustomModal';
 import ListItem from '../components/ListItem';
+import * as Clipboard from 'expo-clipboard';
 
 export default function HomeScreen({ navigation }) {
     const [items, setItems] = useState([]); // Lista de items
@@ -61,13 +62,9 @@ export default function HomeScreen({ navigation }) {
             source: currentButton,
             checked: false
         };
-        //const newItems = [...items, newItem]; // array actualizado
 
         // Guardar en el estado
         setItems((prev) => [...prev, newItem]);
-
-        // Guardar en AsyncStorage
-        //saveAppData({ homeItems: newItems });
 
         // Cerrar modal
         setModalVisible(false);
@@ -104,10 +101,60 @@ export default function HomeScreen({ navigation }) {
     }
 
     const handleAction = (type) => {
-        console.log('Acción desde toolbar superior:', type);
+        switch (type) {
+            case 'copy': // Copiar
+                copySelectedItems();
+                break;
+            case 'export': // Exportar JSON
+                exportSelectedAsJSON();
+                break;
+            case 'remove': // Eliminar
+                deleteSelectedItems();
+                break;
+            default:
+                break;
+        }
     }
 
     const selectedCount = items.filter((i) => i.checked).length;
+
+    const getSelectedItems = () => items.filter(i => i.checked);
+
+    const deleteSelectedItems = () => {
+        setItems(items.filter(i => !i.checked));
+        setSelectionMode(false);
+    };
+    
+    const copySelectedItems = async () => {
+        setItems(prev => {
+            const selected = prev.filter(i => i.checked);
+            if (!selected.length) return prev;
+
+            const duplicated = selected.map(item => ({
+                ...item,
+                id: Date.now().toString() + Math.random(),
+                checked: false
+            }));
+
+            return [
+                ...prev.map(i => ({ ...i, checked: false })),
+                ...duplicated
+            ];
+        });
+
+        setSelectionMode(false);
+    };
+
+    const exportSelectedAsJSON = async () => {
+        const selected = getSelectedItems();
+
+        if (selected.length === 0) return;
+
+        const json = JSON.stringify(selected, null, 2);
+        await Clipboard.setStringAsync(json);
+
+        handleClear();
+    };
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>

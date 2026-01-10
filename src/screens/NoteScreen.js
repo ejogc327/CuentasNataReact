@@ -44,6 +44,9 @@ export default function NoteScreen({ route, navigation }) {
         saveAppData({ nota: text, notaTitle: title });
         navigation.goBack();
     };
+    const handleClear = () => {
+        
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>

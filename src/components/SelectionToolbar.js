@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 
 export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
     //if (selectedCount === 0) return null;
@@ -12,14 +13,14 @@ export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
                 <Text style={styles.count}>{selectedCount}</Text>
             </View>
             <View style={styles.rightGroup}>
-                <TouchableOpacity onPress={() => onAction('A')}>
-                    <Text style={styles.icon}>⚙️</Text>
+                <TouchableOpacity onPress={() => onAction('export')}>
+                    <MaterialIcons name="upload-file" size={24} color="rgba(6, 54, 6, 1)" />                    
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => onAction('B')}>
-                    <Text style={styles.icon}>⚙️</Text>
+                <TouchableOpacity onPress={() => onAction('copy')}>
+                    <MaterialIcons name="content-copy" size={24} color="#000" />                    
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => onAction('C')}>
-                    <Text style={styles.icon}>⚙️</Text>
+                <TouchableOpacity onPress={() => onAction('remove')}>
+                    <MaterialIcons name="delete" size={24} color="#ff4d4d" />                    
                 </TouchableOpacity>
             </View>
         </View>
@@ -27,34 +28,34 @@ export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
 }
 
 const styles = StyleSheet.create({
-  toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#f0f0f0',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-  leftGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  clearText: {
-    color: '#e74c3c',
-    fontWeight: 'bold',
-  },
-  count: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  rightGroup: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  icon: {
-    fontSize: 18,
-  },
+    toolbar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        backgroundColor: '#f0f0f0',
+        borderTopWidth: 1,
+        borderTopColor: '#ccc',
+    },
+    leftGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    clearText: {
+        color: '#e74c3c',
+        fontWeight: 'bold',
+    },
+    count: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    rightGroup: {
+        flexDirection: 'row',
+        gap: 20,
+    },
+    icon: {
+        fontSize: 18,
+    },
 });
