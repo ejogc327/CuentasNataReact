@@ -1,17 +1,25 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
+import ListToolbar from '../components/ListToolbar';
+import { Ionicons } from '@expo/vector-icons';
+
+const ITEM_HEIGHT = 56;
 
 export default function ListScreen({ route, navigation }) {
     const { id, title: initialTitle } = route.params;
     const [title, setTitle] = useState(initialTitle);
     const [items, setItems] = useState([]);
     const [text, setText] = useState('');
+    const [moveMode, setMoveMode] = useState(false);
     
+    const panY = useRef(new Animated.Value(0)).current;    
+    const draggingIndex = useRef(null);
+    const itemPositions = useRef([]); // para guardar la posición Y de cada item
+
     useEffect(() => {
         const load = async () => {
             const data = await getAppData();
@@ -47,11 +55,126 @@ export default function ListScreen({ route, navigation }) {
     };
 
     const toggleItem = (id) => {
+        if (moveMode) return; // no hacer nada
         setItems(items.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
     };
 
     const removeItem = (id) => {
         setItems(items.filter(i => i.id !== id));
+    };
+
+    const updateItemText = (id, text) => {
+        setItems(prev =>
+            prev.map(i =>
+                i.id === id ? { ...i, text } : i
+            )
+        );
+    };
+
+    const handleAddItem = () => {
+        const newItem = {
+            id: Date.now().toString(),
+            text: '',
+            checked: false,
+        };
+        setItems(prev => [...prev, newItem]);
+    }
+
+    const handleMoveItems = () => {
+        setMoveMode(prev => !prev);
+        draggingIndex.current = -1;
+        panY.setValue(0);
+    }
+
+    const handleConfirm = () => {
+        setMoveMode(false);
+        draggingIndex.current = -1;
+    }
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => moveMode,
+            onPanResponderGrant: (_, gesture) => {
+                const scrollOffset = scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard || 0;
+                const index = Math.floor((gesture.y0 + scrollOffset - 20) / ITEM_HEIGHT);
+                draggingIndex.current = index;
+                panY.setValue(0);
+            },
+            onPanResponderMove: Animated.event(
+                [null, { dy: panY }],
+                { useNativeDriver: false }
+            ),
+            onPanResponderRelease: (_, gesture) => {
+                if (draggingIndex.current === null) return;
+
+                const from = draggingIndex.current;
+                const to = from + Math.round(gesture.dy / ITEM_HEIGHT);
+
+                if (to >= 0 && to < items.length && to !== from) {
+                    const updated = [...items];
+                    const [moved] = updated.splice(from, 1);
+                    updated.splice(to, 0, moved);
+                    setItems(updated);
+                }
+
+                panY.setValue(0);
+                draggingIndex.current = null;
+            },
+        })
+    ).current;
+
+    const renderItem = (item, index) => {
+        const isDragging = moveMode && draggingIndex.current === index;
+        const top = panY.interpolate({
+            inputRange: [-ITEM_HEIGHT, 0, ITEM_HEIGHT],
+            outputRange: [-ITEM_HEIGHT, 0, ITEM_HEIGHT],
+            extrapolate: 'clamp',
+        });
+        return (
+            <Animated.View
+                key={item.id}
+                {...(moveMode ? panResponder.panHandlers : {})}
+                style={[
+                    styles.itemRow,
+                    isDragging && { 
+                        position: 'absolute',  // 🔥 importante
+                        left: 0,
+                        right: 0,
+                        transform: [{ translateY: panY }],
+                        zIndex: 10,
+                        elevation: 10,
+                        backgroundColor: '#fff',
+                    },
+                ]}
+            >
+                {moveMode && (
+                    <Ionicons name="reorder-three-outline" size={22} color={moveMode ? '#ccc' : '#333'}/>
+                )}
+                {!moveMode && (
+                    <Checkbox
+                        value={item.checked}
+                        onValueChange={() => toggleItem(item.id)}
+                    />
+                )}
+                <TextInput
+                    style={[
+                        styles.itemText,
+                        item.checked && { textDecorationLine: 'line-through' },
+                        moveMode && { color: '#999' },
+                    ]}
+                    value={item.text}
+                    onChangeText={(text) => updateItemText(item.id, text)}
+                    placeholder="..."
+                    editable={!moveMode}
+                    multiline
+                />
+                {!moveMode && (
+                    <TouchableOpacity onPress={() => removeItem(item.id)}>
+                        <Ionicons name="close-circle-outline" size={26} color="#000"/>
+                    </TouchableOpacity>
+                )}
+            </Animated.View>
+        )
     };
 
     return (
@@ -63,7 +186,7 @@ export default function ListScreen({ route, navigation }) {
                 setTitle={setTitle}
             />
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={ styles.keyboardArea }
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={0}
             >
@@ -79,29 +202,17 @@ export default function ListScreen({ route, navigation }) {
                             <Text style={styles.addText}>＋</Text>
                         </TouchableOpacity>
                     </View>
-
-                    <FlatList
-                        data={items}
-                        keyExtractor={(i) => i.id}
-                        renderItem={({ item }) => (
-                            <View style={styles.itemRow}>
-                                <TouchableOpacity style={styles.dropdown}>
-                                    <Text style={{ fontSize: 16 }}>⮟</Text>
-                                </TouchableOpacity>
-                                <Checkbox
-                                    value={item.checked}
-                                    onValueChange={() => toggleItem(item.id)}
-                                />
-                                <Text style={[styles.itemText, item.checked && { textDecorationLine: 'line-through' }]}>
-                                    {item.text}
-                                </Text>
-                                <TouchableOpacity onPress={() => removeItem(item.id)}>
-                                    <Text style={styles.deleteText}>🗑️</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    />
+                    <ScrollView scrollEnabled={!moveMode}>
+                        {items.map((item, index) => renderItem(item, index))}
+                    </ScrollView>
                 </View>
+                <ListToolbar 
+                    style={styles.toolbarWrapper} 
+                    onAdd={handleAddItem} 
+                    onMove={handleMoveItems} 
+                    onConfirm={handleConfirm} 
+                    moveMode={moveMode}
+                />
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -111,6 +222,9 @@ const styles = StyleSheet.create({
     safeArea: {        
         flex: 1,
         backgroundColor: '#fff',
+    },
+    keyboardArea: {
+        flex: 1,
     },
     container: { 
         flex: 1, 
@@ -145,14 +259,17 @@ const styles = StyleSheet.create({
         fontSize: 20 
     },
     itemRow: {
+        height: ITEM_HEIGHT,
         flexDirection: 'row', 
         alignItems: 'center',
+        paddingHorizontal: 8,
         paddingVertical: 8, 
         borderBottomWidth: 1, 
         borderColor: '#eee',
     },
     dropdown: { 
-        marginRight: 10 
+        marginRight: 10,
+
     },
     itemText: { 
         flex: 1, 
@@ -162,5 +279,13 @@ const styles = StyleSheet.create({
     deleteText: { 
         fontSize: 18, 
         color: '#e74c3c' 
+    },
+
+    toolbarWrapper: {
+        height: 56,          // ALTURA REAL
+        minHeight: 56,
+        maxHeight: 56,
+        overflow: 'hidden',  // 🔥 CLAVE
+        backgroundColor: '#0e0',
     },
 });

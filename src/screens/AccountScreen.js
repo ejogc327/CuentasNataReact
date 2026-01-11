@@ -93,6 +93,7 @@ export default function AccountScreen({ route, navigation }) {
                         )}
                     />
                 </View>
+                
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
