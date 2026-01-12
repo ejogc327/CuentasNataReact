@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Animated, PanResponder, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, findNodeHandle, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Checkbox from 'expo-checkbox';
 import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
 import ListToolbar from '../components/ListToolbar';
 import { Ionicons } from '@expo/vector-icons';
+import { DragndropStartPoint, DragndropEndPoint, DragndropDragContent } from '../components/dragndrop';
+import { useDragndrop } from '../context/dragndrop/useDragndrop';
 
 const ITEM_HEIGHT = 56;
 
@@ -16,9 +18,8 @@ export default function ListScreen({ route, navigation }) {
     const [text, setText] = useState('');
     const [moveMode, setMoveMode] = useState(false);
     
-    const panY = useRef(new Animated.Value(0)).current;    
-    const draggingIndex = useRef(null);
-    const itemPositions = useRef([]); // para guardar la posición Y de cada item
+    const itemRects = useRef({});
+    const { dropPos, data: draggedData } = useDragndrop();
 
     useEffect(() => {
         const load = async () => {
@@ -82,100 +83,33 @@ export default function ListScreen({ route, navigation }) {
 
     const handleMoveItems = () => {
         setMoveMode(prev => !prev);
-        draggingIndex.current = -1;
-        panY.setValue(0);
     }
 
     const handleConfirm = () => {
         setMoveMode(false);
-        draggingIndex.current = -1;
     }
 
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => moveMode,
-            onPanResponderGrant: (_, gesture) => {
-                const scrollOffset = scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard || 0;
-                const index = Math.floor((gesture.y0 + scrollOffset - 20) / ITEM_HEIGHT);
-                draggingIndex.current = index;
-                panY.setValue(0);
-            },
-            onPanResponderMove: Animated.event(
-                [null, { dy: panY }],
-                { useNativeDriver: false }
-            ),
-            onPanResponderRelease: (_, gesture) => {
-                if (draggingIndex.current === null) return;
+    useEffect(() => {
+        if (!dropPos || !draggedData) return;
 
-                const from = draggingIndex.current;
-                const to = from + Math.round(gesture.dy / ITEM_HEIGHT);
-
-                if (to >= 0 && to < items.length && to !== from) {
-                    const updated = [...items];
-                    const [moved] = updated.splice(from, 1);
-                    updated.splice(to, 0, moved);
-                    setItems(updated);
-                }
-
-                panY.setValue(0);
-                draggingIndex.current = null;
-            },
-        })
-    ).current;
-
-    const renderItem = (item, index) => {
-        const isDragging = moveMode && draggingIndex.current === index;
-        const top = panY.interpolate({
-            inputRange: [-ITEM_HEIGHT, 0, ITEM_HEIGHT],
-            outputRange: [-ITEM_HEIGHT, 0, ITEM_HEIGHT],
-            extrapolate: 'clamp',
+        const target = Object.entries(itemRects.current).find(([id, rect]) => {
+            const x2 = rect.x + rect.width;
+            const y2 = rect.y + rect.height;
+            return dropPos.x >= rect.x && dropPos.x <= x2 && dropPos.y >= rect.y && dropPos.y <= y2;
         });
-        return (
-            <Animated.View
-                key={item.id}
-                {...(moveMode ? panResponder.panHandlers : {})}
-                style={[
-                    styles.itemRow,
-                    isDragging && { 
-                        position: 'absolute',  // 🔥 importante
-                        left: 0,
-                        right: 0,
-                        transform: [{ translateY: panY }],
-                        zIndex: 10,
-                        elevation: 10,
-                        backgroundColor: '#fff',
-                    },
-                ]}
-            >
-                {moveMode && (
-                    <Ionicons name="reorder-three-outline" size={22} color={moveMode ? '#ccc' : '#333'}/>
-                )}
-                {!moveMode && (
-                    <Checkbox
-                        value={item.checked}
-                        onValueChange={() => toggleItem(item.id)}
-                    />
-                )}
-                <TextInput
-                    style={[
-                        styles.itemText,
-                        item.checked && { textDecorationLine: 'line-through' },
-                        moveMode && { color: '#999' },
-                    ]}
-                    value={item.text}
-                    onChangeText={(text) => updateItemText(item.id, text)}
-                    placeholder="..."
-                    editable={!moveMode}
-                    multiline
-                />
-                {!moveMode && (
-                    <TouchableOpacity onPress={() => removeItem(item.id)}>
-                        <Ionicons name="close-circle-outline" size={26} color="#000"/>
-                    </TouchableOpacity>
-                )}
-            </Animated.View>
-        )
-    };
+
+        if (!target) return;
+
+        const targetIndex = items.findIndex(i => i.id === target[0]);
+        const draggedIndex = items.findIndex(i => i.id === draggedData.id);
+        if (targetIndex === draggedIndex) return;
+
+        const newItems = [...items];
+        const [removed] = newItems.splice(draggedIndex, 1);
+        newItems.splice(targetIndex, 0, removed);
+        setItems(newItems);
+
+    }, [dropPos]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -202,9 +136,75 @@ export default function ListScreen({ route, navigation }) {
                             <Text style={styles.addText}>＋</Text>
                         </TouchableOpacity>
                     </View>
-                    <ScrollView scrollEnabled={!moveMode}>
-                        {items.map((item, index) => renderItem(item, index))}
-                    </ScrollView>
+                    <FlatList
+                        data={items}
+                        keyExtractor={item => item.id}
+                        scrollEnabled={!moveMode}
+                        renderItem={({ item }) => {
+                            // Contenido del item
+                            const content = (
+                                <View
+                                    style={[styles.itemRow, { backgroundColor: item.checked ? '#eee' : '#fff' }]}
+                                    ref={ref => {
+                                        if (ref) {
+                                            const handle = findNodeHandle(ref);
+                                            UIManager.measure(handle, (x, y, width, height, pageX, pageY) => {
+                                                itemRects.current[item.id] = { x: pageX, y: pageY, width, height };
+                                            });
+                                        }
+                                    }}
+                                >
+                                    {moveMode && (
+                                        <Ionicons name="reorder-three-outline" size={22} color={moveMode ? '#ccc' : '#333'}/>
+                                    )}
+                                    { !moveMode && (
+                                        <Checkbox value={item.checked} onValueChange={() => toggleItem(item.id)} />
+                                    )}
+                                    <TextInput
+                                        style={styles.itemText}
+                                        value={item.text}
+                                        placeholder="..."
+                                        editable={!moveMode}
+                                        onChangeText={text => updateItemText(item.id, text)}
+                                    />
+                                    {!moveMode && (
+                                        <TouchableOpacity onPress={() => removeItem(item.id)}>
+                                            <Ionicons name="close-circle-outline" size={26} color="#000"/>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            );
+                            // Solo usar drag & drop si moveMode = true
+                            if (moveMode) {
+                                return (
+                                    <DragndropEndPoint onDrop={() => {}} key={item.id}>
+                                        <DragndropStartPoint data={item}>
+                                            {content}
+                                        </DragndropStartPoint>
+                                    </DragndropEndPoint>
+                                );
+                            } else {
+                                return <View key={item.id}>{content}</View>
+                            }
+                        }}
+                    />
+                    {moveMode && draggedData && (
+                        <DragndropDragContent>
+                            <View
+                                style={[
+                                    styles.itemRow,
+                                    { backgroundColor: draggedData.checked ? '#eee' : '#fff', width: '100%', opacity: 0.9,}
+                                ]}
+                            >
+                                <Ionicons name="reorder-three-outline" size={22} color="#ccc" />
+                                <TextInput
+                                    style={styles.itemText}
+                                    value={draggedData.text}
+                                    editable={false} // no editable en ghost
+                                />
+                            </View>
+                        </DragndropDragContent>
+                    )}
                 </View>
                 <ListToolbar 
                     style={styles.toolbarWrapper} 
