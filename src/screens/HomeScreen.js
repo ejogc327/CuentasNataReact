@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
+import { View, Text, Modal, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAppData, saveAppData } from '../utils/storage';
 import HomeToolbar from '../components/HomeToolbar';
@@ -7,10 +7,13 @@ import SelectionToolbar from '../components/SelectionToolbar';
 import CustomModal from '../components/CustomModal';
 import ListItem from '../components/ListItem';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HomeScreen({ navigation }) {
     const [items, setItems] = useState([]); // Lista de items
     const [modalVisible, setModalVisible] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
     const [currentButton, setCurrentButton] = useState('');
     const [inputText, setInputText] = useState('');
     const [selectionMode, setSelectionMode] = useState(false);
@@ -19,6 +22,9 @@ export default function HomeScreen({ navigation }) {
         { id: '2', title: 'Listas', type: 'list' },
         { id: '3', title: 'Cuentas', type: 'account' },
     ]);
+    
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
 
     // Cargar los ítems al entrar al home
     useEffect(() => {
@@ -92,7 +98,6 @@ export default function HomeScreen({ navigation }) {
         setSelectionMode(false);
         // Desmarcamos todos los ítems
         setItems(items.map((i) => ({ ...i, checked: false })));
-        //console.log(`Botón derecho presionado: ${buttonName}`);
     }
 
     const handleClear = () => {
@@ -156,9 +161,63 @@ export default function HomeScreen({ navigation }) {
         handleClear();
     };
 
+    const exportAllAsJSON = async () => {
+        const data = await getAppData();
+        const json = JSON.stringify(data, null, 2);
+        await Clipboard.setStringAsync(json);
+    };
+
+    const importJSON = async () => {
+        const text = await Clipboard.getStringAsync();
+        try {
+            const data = JSON.parse(text);
+            await saveAppData(data);
+            if (data.homeItems) setItems(data.homeItems);
+        } catch (e) {
+            // JSON inválido
+        }
+    };
+
     return (
-        <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <SafeAreaView style={ styles.safeArea } edges={['top', 'left', 'right', 'bottom']}>
             <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Notepad</Text>
+                    <TouchableOpacity onPress={() => setMenuVisible(true)}>
+                        <Ionicons name="ellipsis-vertical" size={24} color={theme.text}/>
+                    </TouchableOpacity>
+                </View>
+
+                <Modal
+                    visible={menuVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setMenuVisible(false)}
+                >
+                    <TouchableOpacity 
+                        style={styles.menuOverlay} 
+                        onPress={() => setMenuVisible(false)}
+                    >
+                        <View style={styles.menuContainer}>
+                            {[
+                                { label: 'Seleccionar', action: () => { setSelectionMode(true); setMenuVisible(false); } },
+                                { label: 'Exportar todo JSON', action: () => { exportAllAsJSON(); setMenuVisible(false); } },
+                                { label: 'Importar JSON', action: () => { importJSON(); setMenuVisible(false); } },
+                                { label: 'Configuración', action: () => { navigation.navigate('Settings'); setMenuVisible(false); } },
+                                { label: 'Acerca de...', action: () => setMenuVisible(false) },
+                            ].map((option) => (
+                                <TouchableOpacity 
+                                    key={option.label} 
+                                    style={styles.menuItem} 
+                                    onPress={option.action}
+                                >
+                                    <Ionicons name={option.icon} size={20} color="#333" style={{ marginRight: 12 }} />
+                                    <Text style={styles.menuItemText}>{option.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
                 {/* Lista de títulos */}
                 <FlatList
                     data={items}
@@ -214,17 +273,17 @@ export default function HomeScreen({ navigation }) {
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     safeArea: {        
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: theme.bg,
     },
     container: {
         flex: 1,
     },
     empty: {
         textAlign: 'center',
-        color: '#777',
+        color: theme.text,
         marginTop: 20,
     },
     toolbarContainer: {
@@ -235,5 +294,49 @@ const styles = StyleSheet.create({
         bottom: 56, // altura del toolbar base
         left: 0,
         right: 0,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderColor: theme.muted,
+        color: theme.text
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: theme.text,
+    },
+    menuOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+    },
+    menuContainer: {
+        backgroundColor: theme.bg,
+        borderRadius: 12,
+        marginTop: 60,
+        marginRight: 16,
+        paddingVertical: 8,
+        minWidth: 200,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    menuItemText: {
+        fontSize: 15,
+        color: theme.text
     },
 });

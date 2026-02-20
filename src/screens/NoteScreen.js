@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
+import { Keyboard } from 'react-native';
 import { View, TextInput, StyleSheet, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAppData, saveAppData } from '../utils/storage';
 import ScreenHeader from '../components/ScreenHeader';
 import NoteToolbar from '../components/NoteToolbar';
+import { useTheme } from '../context/ThemeContext';
 
 export default function NoteScreen({ route, navigation }) {
     const { id, title: initialTitle } = route.params;
     const [title, setTitle] = useState(initialTitle);
     const [text, setText] = useState('');
+
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
 
     useEffect(() => {
         const load = async () => {
@@ -40,6 +46,21 @@ export default function NoteScreen({ route, navigation }) {
         save();
     }, [text, title, id]);
 
+    // Para reemplazar el keyboard
+    useEffect(() => {
+        const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+            setKeyboardHeight(e.endCoordinates.height);
+        });
+        const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardHeight(0);
+        });
+
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
     const handleSave = () => {
         saveAppData({ nota: text, notaTitle: title });
         navigation.goBack();
@@ -56,11 +77,7 @@ export default function NoteScreen({ route, navigation }) {
                 title={title}
                 setTitle={setTitle}
             />
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
-            >
+            <View style={[styles.keyboardArea, { paddingBottom: keyboardHeight }]}>
                 <View style={styles.container}>
                     <TextInput 
                         style={styles.input}
@@ -71,15 +88,18 @@ export default function NoteScreen({ route, navigation }) {
                     />
                 </View>
                 <NoteToolbar onSave={handleSave} onClear={handleClear} />
-            </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     safeArea: {                
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: theme.bg,
+    },
+    keyboardArea: {
+        flex: 1,
     },
     container: { 
         flex: 1, 
@@ -90,5 +110,6 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
         fontSize: 16,
         padding: 5,
+        color: theme.text
     },
 });

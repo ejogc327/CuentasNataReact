@@ -1,31 +1,39 @@
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export default function NoteToolbar({ onSave, onClear }) {
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.button} onPress={onSave}>
-                <Ionicons name="save-outline" size={24} color="#333" />
-                <Text style={styles.label}>Guardar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={onClear}>
-                <Ionicons name="trash-outline" size={24} color="#e74c3c" />
-                <Text style={[styles.label, { color: '#e74c3c' }]}>Borrar</Text>
-            </TouchableOpacity>
+            <View style={styles.leftGroup}>
+                
+            </View>
+            <View style={styles.rightGroup}>
+                <TouchableOpacity style={styles.button} onPress={onSave}>
+                    <Ionicons name="checkmark-circle-outline" size={24} color="#4CAF50" />
+                </TouchableOpacity>
+            </View>
+
         </View>
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     container: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        borderTopWidth: 1,
-        borderColor: '#ccc',
         paddingVertical: 10,
-        backgroundColor: '#fff',
+        backgroundColor: theme.bg,
     },
+    leftGroup: {
+        flexDirection: 'row',
+        marginLeft: 20,
+    },
+    rightGroup: {},
     button: {
         alignItems: 'center',
     },

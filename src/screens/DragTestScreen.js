@@ -28,7 +28,6 @@ export default function DragTestScreen() {
             <View style={{ flex: 1, justifyContent: 'flex-end' }}>
                 <DragndropEndPoint
                     onDrop={(data) => {
-                        console.log('DROP OK:', data);
                         alert(`Drop correcto: ${data.color}`);
                     }}
                 >

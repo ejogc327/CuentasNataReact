@@ -1,20 +1,24 @@
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // íconos bonitos
+import { useTheme } from '../context/ThemeContext';
 
 export default function HomeToolbar({ onPressLeft, onPressRight, selectionMode }) {
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+
     return (
         <View style={styles.container}>
             {/* Sección izquierda (3 botones) */}
             <View style={styles.leftGroup}>
                 {/* Botones izquierdos (se deshabilitan en modo selección) */}
                 <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('nota')}>
-                    <Ionicons name="document-text-sharp" size={24} color="black" />
+                    <Ionicons name="document-text-sharp" size={24} color={theme.blue} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('lista')}>
-                    <Ionicons name="list-sharp" size={24} color="black" />
+                    <Ionicons name="list-sharp" size={24} color={theme.blue} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} disabled={selectionMode} onPress={() => onPressLeft('cuenta')}>
-                    <Ionicons name="calculator-sharp" size={24} color="black" />
+                    <Ionicons name="calculator-sharp" size={24} color={theme.blue} />
                 </TouchableOpacity>
             </View>
             {/* Sección derecha (2 botones) */}
@@ -23,10 +27,10 @@ export default function HomeToolbar({ onPressLeft, onPressRight, selectionMode }
                 {selectionMode && (
                     <>
                         <TouchableOpacity style={styles.button} onPress={() => onPressRight('cancel')}>
-                            <Ionicons name="close-outline" size={24} color="black" />
+                            <Ionicons name="close-outline" size={24} color={theme.blue} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.button} onPress={() => onPressRight('save')}>
-                            <Ionicons name="checkmark-outline" size={24} color="black" />
+                            <Ionicons name="checkmark-outline" size={24} color={theme.blue} />
                         </TouchableOpacity>
                     </>
                 )}
@@ -35,16 +39,14 @@ export default function HomeToolbar({ onPressLeft, onPressRight, selectionMode }
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     container: {
         flexDirection: 'row', // alinear los grupos horizontalmente
         justifyContent: 'space-between', // separa izquierda y derecha
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 10,
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#ccc',
+        backgroundColor: theme.bg,
     },
     leftGroup: {
         flexDirection: 'row',

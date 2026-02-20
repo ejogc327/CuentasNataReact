@@ -11,17 +11,12 @@ export const DragndropEndPoint = ({ children, onDrop }) => {
         const x2 = rect.x + rect.width;
         const y2 = rect.y + rect.height;
 
-        // MOSTRAR INFO EN CONSOLA
-        console.log('Drop detected:');
-        console.log('dropPos:', dropPos);
-        console.log('rect:', rect);
         if (
             dropPos.x >= rect.x &&
             dropPos.x <= x2 &&
             dropPos.y >= rect.y &&
             dropPos.y <= y2
         ) {
-            console.log('DROP INSIDE ELEMENT:', data);
             onDrop(data);
         }
     }, [dropPos, rect, data, onDrop]);

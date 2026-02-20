@@ -1,7 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+    
     //if (selectedCount === 0) return null;
 
     return (
@@ -14,10 +18,10 @@ export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
             </View>
             <View style={styles.rightGroup}>
                 <TouchableOpacity onPress={() => onAction('export')}>
-                    <MaterialIcons name="upload-file" size={24} color="rgba(6, 54, 6, 1)" />                    
+                    <MaterialIcons name="upload-file" size={24} color={theme.blue} />                    
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onAction('copy')}>
-                    <MaterialIcons name="content-copy" size={24} color="#000" />                    
+                    <MaterialIcons name="content-copy" size={24} color={theme.blue} />                    
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onAction('remove')}>
                     <MaterialIcons name="delete" size={24} color="#ff4d4d" />                    
@@ -27,16 +31,14 @@ export default function SelectionToolbar({ selectedCount, onClear, onAction }) {
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     toolbar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 10,
-        backgroundColor: '#f0f0f0',
-        borderTopWidth: 1,
-        borderTopColor: '#ccc',
+        backgroundColor: theme.bg,
     },
     leftGroup: {
         flexDirection: 'row',
@@ -50,6 +52,7 @@ const styles = StyleSheet.create({
     count: {
         fontSize: 16,
         fontWeight: 'bold',
+        color: theme.textSecondary,
     },
     rightGroup: {
         flexDirection: 'row',

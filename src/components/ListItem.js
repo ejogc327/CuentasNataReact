@@ -2,8 +2,12 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
-export default function ListItem({ item, showCheckboxes, onLongPress, onToggle, onPress }) {
+export default function ListItem({ item, showCheckboxes, onLongPress, onToggle, onPress }) {    
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+
     const getIconName = () => {
         switch (item.source) {
             case 'nota':
@@ -41,20 +45,18 @@ export default function ListItem({ item, showCheckboxes, onLongPress, onToggle, 
                     />
                 )}            
                 <Text style={styles.label}>{item.title}</Text>
-                <Ionicons name={getIconName()} size={24} color="#333"/>
+                <Ionicons name={getIconName()} size={24} color={theme.textSecondary}/>
             </View>
         </TouchableOpacity>
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     itemContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderColor: '#ddd',
         justifyContent: 'space-between',
     },
     checkbox: {
@@ -63,5 +65,6 @@ const styles = StyleSheet.create({
     label: {
         flex: 1,
         fontSize: 18,
+        color: theme.text
     },
 });

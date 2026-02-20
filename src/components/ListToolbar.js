@@ -2,8 +2,12 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ListToolbar({ onAdd, onMove, onConfirm, moveMode }) {
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+
     return (
         <View style={styles.container}>
             <View style={styles.leftGroup}>
@@ -30,14 +34,15 @@ export default function ListToolbar({ onAdd, onMove, onConfirm, moveMode }) {
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     container: {
-    height: 56,
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+        height: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: theme.bg,
     },
     leftGroup: {
         flexDirection: 'row',

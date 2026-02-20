@@ -1,4 +1,5 @@
 import { Modal, View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CustomModal({
     visible,
@@ -9,6 +10,9 @@ export default function CustomModal({
     onCancel,
     onSave,
 }) {
+    const { theme } = useTheme();
+    const styles = makeStyles(theme);
+
     return (
         <Modal
             visible={visible}
@@ -27,6 +31,7 @@ export default function CustomModal({
                             <TextInput
                                 style={styles.input}
                                 placeholder="Escribe el título..."
+                                placeholderTextColor={theme.muted}
                                 value={inputValue}
                                 onChangeText={onChangeText}
                             />
@@ -46,7 +51,7 @@ export default function CustomModal({
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme) => StyleSheet.create({
     overlay: {
         flex: 1,
         justifyContent: 'center',
@@ -55,7 +60,7 @@ const styles = StyleSheet.create({
     },
     modal: {
         width: '80%',
-        backgroundColor: '#fff',
+        backgroundColor: theme.bg,
         borderRadius: 12,
         padding: 20,
         elevation: 5,
@@ -64,10 +69,12 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
+        color: theme.text
     },
     text: {
         fontSize: 16,
         marginBottom: 10,
+        color: theme.textSecondary
     },
     input: {
         borderWidth: 1,
@@ -86,10 +93,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     cancel: {
-        backgroundColor: '#ccc',
+        backgroundColor: theme.bg,
     },
     save: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: theme.bg,
     },
     buttonText: {
         color: '#fff',
