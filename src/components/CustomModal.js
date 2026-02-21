@@ -31,7 +31,7 @@ export default function CustomModal({
                             <TextInput
                                 style={styles.input}
                                 placeholder="Escribe el título..."
-                                placeholderTextColor={theme.muted}
+                                placeholderTextColor={theme.placeholder}
                                 value={inputValue}
                                 onChangeText={onChangeText}
                             />

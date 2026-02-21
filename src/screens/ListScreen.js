@@ -24,6 +24,8 @@ export default function ListScreen({ route, navigation }) {
     const [listHeight, setListHeight] = useState(0);
     const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
     const [draggedItemId, setDraggedItemId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const inputRefs = useRef({});
     
     const itemRects = useRef({});
     const flatListRef = useRef(null);
@@ -158,6 +160,13 @@ export default function ListScreen({ route, navigation }) {
             hideSub.remove();
         };
     }, []);
+    
+    // Para cambiar de foco
+    useEffect(() => {
+        if (editingId && inputRefs.current[editingId]) {
+            inputRefs.current[editingId].focus();
+        }
+    }, [editingId]);
 
     const addItem = () => {
         if (!text.trim()) return;
@@ -213,6 +222,7 @@ export default function ListScreen({ route, navigation }) {
     const renderItem = ({ item }) => {
         // 🔥 Ocultar el item que se está arrastrando
         const isDragging = draggedItemId === item.id;
+        const isEditing = editingId === item.id;
 
         const itemContent = (
             <View
@@ -238,8 +248,8 @@ export default function ListScreen({ route, navigation }) {
                     <DragndropStartPoint 
                         data={item} 
                         handleOnly={true}
-                        onDragStarted={handleDragStart} // 🔥 Callback
-                        onDragEnded={handleDragEnd} // 🔥 Callback
+                        onDragStarted={handleDragStart} // Callback
+                        onDragEnded={handleDragEnd} // Callback
                     >
                         <View style={styles.dragHandle}>
                             <Ionicons name="reorder-three-outline" size={24} color={theme.muted}/>
@@ -248,16 +258,41 @@ export default function ListScreen({ route, navigation }) {
                 ) : (
                     <Checkbox value={item.checked} onValueChange={() => toggleItem(item.id)} />
                 )}
-                
-                <TextInput
-                    style={styles.itemText}
-                    value={item.text}
-                    placeholder="..."
-                    placeholderTextColor={theme.textSecondary}
-                    editable={!moveMode}
-                    pointerEvents={moveMode ? 'none' : 'auto'}
-                    onChangeText={text => updateItemText(item.id, text)}
-                />
+
+                {moveMode ? (
+                    <Text style={styles.itemText}>{item.text}</Text>
+                ) : (
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        activeOpacity={1}
+                        onPress={() => setEditingId(item.id)}
+                    >
+                    {editingId === item.id ? (
+                        <TextInput
+                            ref={ref => (inputRefs.current[item.id] = ref)}
+                            style={styles.itemText}
+                            value={item.text}
+                            autoFocus
+                            onBlur={() => setEditingId(null)}
+                            onChangeText={text => updateItemText(item.id, text)}
+                            placeholder="..."
+                            placeholderTextColor={theme.textSecondary}
+                        />
+                    ) : (
+                        <Text 
+                            style={[
+                                styles.itemText, 
+                                { 
+                                    paddingVertical: 8,   // mismo que TextInput
+                                    paddingHorizontal: 4, // si TextInput no tiene padding horizontal
+                                }
+                            ]}
+                        >
+                            {item.text || "..."}
+                        </Text>
+                    )}
+                    </TouchableOpacity>
+                )}
                 
                 {!moveMode && (
                     <TouchableOpacity onPress={() => removeItem(item.id)}>
@@ -282,7 +317,7 @@ export default function ListScreen({ route, navigation }) {
         <SafeAreaView style={styles.safeArea}>
             <ScreenHeader 
                 navigation={navigation}
-                icon="document-text-sharp"
+                icon="list-sharp"
                 title={title}
                 setTitle={setTitle}
             />
@@ -303,7 +338,7 @@ export default function ListScreen({ route, navigation }) {
                         <TextInput
                             style={styles.input}
                             placeholder="Nuevo ítem..."
-                            placeholderTextColor={theme.textSecondary}
+                            placeholderTextColor={theme.placeholder}
                             value={text}
                             onChangeText={setText}
                         />

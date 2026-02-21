@@ -83,6 +83,7 @@ export default function NoteScreen({ route, navigation }) {
                         style={styles.input}
                         multiline
                         placeholder="Escribe tus notas aquí..."
+                        placeholderTextColor={theme.placeholder}
                         value={text}
                         onChangeText={setText}
                     />

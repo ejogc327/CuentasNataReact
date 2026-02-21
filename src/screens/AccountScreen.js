@@ -27,6 +27,8 @@ export default function AccountScreen({ route, navigation }) {
     const [listHeight, setListHeight] = useState(0);
     const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
     const [draggedItemId, setDraggedItemId] = useState(null);
+    const [editingId, setEditingId] = useState({ type: null, id: null });
+    const inputRefs = useRef({});   
 
     const itemRects = useRef({});
     const flatListRef = useRef(null);
@@ -161,6 +163,13 @@ export default function AccountScreen({ route, navigation }) {
             hideSub.remove();
         };
     }, []);
+    
+    // Para cambiar de foco
+    useEffect(() => {
+        if (editingId && inputRefs.current[editingId]) {
+            inputRefs.current[editingId].focus();
+        }
+    }, [editingId]);
 
     const addAccount = () => {
         setAccounts([...accounts, { 
@@ -219,6 +228,7 @@ export default function AccountScreen({ route, navigation }) {
 
     const renderItem = ({ item }) => {
         const isDragging = draggedItemId === item.id;
+        const isEditing = editingId === item.id;
 
         const itemContent = (
             <View
@@ -268,27 +278,81 @@ export default function AccountScreen({ route, navigation }) {
                     <Checkbox value={item.checked} onValueChange={() => toggleItem(item.id)} />
                 )}
                                 
-                <TextInput
-                    style={styles.textInput}
-                    placeholder="..."
-                    placeholderTextColor={theme.muted}
-                    value={item.text}
-                    onChangeText={(t) => updateAccount(item.id, 'text', t)}
-                    editable={!moveMode}
-                    pointerEvents={moveMode ? 'none' : 'auto'}
-                />
-                
-                <TextInput
-                    style={styles.numInput}
-                    placeholder="0"
-                    placeholderTextColor={theme.muted}
-                    keyboardType="numeric"
-                    value={String(item.value)}
-                    onChangeText={(v) => updateAccount(item.id, 'value', v)}
-                    editable={!moveMode}
-                    pointerEvents={moveMode ? 'none' : 'auto'}
-                    selectTextOnFocus={true}
-                />
+                {moveMode ? (
+                    // Cuando estamos en moveMode, solo mostramos texto plano
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={styles.textInput}>{item.text}</Text>
+                        <Text style={styles.numInput}>{item.value}</Text>
+                    </View>
+                ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {/* Input de texto */}
+                        {editingId?.type === 'text' && editingId.id === item.id ? (
+                            <TextInput
+                                ref={ref => (inputRefs.current[`text-${item.id}`] = ref)}
+                                style={styles.textInput}
+                                value={item.text}
+                                autoFocus
+                                onBlur={() => setEditingId({ type: null, id: null })}
+                                onChangeText={t => updateAccount(item.id, 'text', t)}
+                                placeholder="..."
+                                placeholderTextColor={theme.placeholder}
+                            />
+                        ) : (
+                            <TouchableOpacity
+                                style={{ flex: 1 }}
+                                activeOpacity={1}
+                                onPress={() => setEditingId({ type: 'text', id: item.id })}
+                            >
+                                <Text 
+                                    style={[
+                                        styles.textInput, 
+                                        { 
+                                            paddingVertical: 8, 
+                                            paddingHorizontal: 4,
+                                        }
+                                    ]}
+                                >
+                                    {item.text || '...'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Input numérico */}
+                        {editingId?.type === 'num' && editingId.id === item.id ? (
+                            <TextInput
+                                ref={ref => (inputRefs.current[`num-${item.id}`] = ref)}
+                                style={[styles.numInput, { textAlign: 'right' }]}
+                                value={String(item.value)}
+                                keyboardType="numeric"
+                                autoFocus
+                                onBlur={() => setEditingId({ type: null, id: null })}
+                                onChangeText={v => updateAccount(item.id, 'value', v)}
+                                selectTextOnFocus={true}
+                                placeholder="0"
+                                placeholderTextColor={theme.placeholder}
+                            />
+                        ) : (
+                            <TouchableOpacity
+                                style={{ width: 50 }}
+                                activeOpacity={1}
+                                onPress={() => setEditingId({ type: 'num', id: item.id })}
+                            >
+                                <Text
+                                    style={[
+                                        styles.numInput, 
+                                        { 
+                                            paddingVertical: 8, 
+                                            paddingHorizontal: 4,
+                                        }
+                                    ]}
+                                >
+                                    {item.value}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
                 
                 {!moveMode && (
                     <Checkbox
@@ -315,7 +379,7 @@ export default function AccountScreen({ route, navigation }) {
         <SafeAreaView style={styles.safeArea}>
             <ScreenHeader 
                 navigation={navigation}
-                icon="document-text-sharp"
+                icon="calculator-sharp"
                 title={title}
                 setTitle={setTitle}
             />
