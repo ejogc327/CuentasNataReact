@@ -39,8 +39,14 @@ export default function NoteScreen({ route, navigation }) {
                 ...current.notes,         // merge de notas existentes
                 [id]: { text, title }     // solo actualiza la nota actual
             };
-
-            await saveAppData({ notes: updatedNotes });
+            const updatedHomeItems = current.homeItems?.map(i =>
+                i.id === id ? { ...i, title } : i
+            );
+            await saveAppData({
+				...current,
+				notes: updatedNotes,
+				homeItems: updatedHomeItems
+			});
         };
 
         save();
@@ -60,13 +66,39 @@ export default function NoteScreen({ route, navigation }) {
             hideSub.remove();
         };
     }, []);
+    
+    const saveNoteData = async (updatedTitle, updatedText) => {
+        const current = await getAppData();
+
+        // Actualizar la lista específica
+        const updatedNotes = {
+            ...current.notes,
+            [id]: { title: updatedTitle, text: updatedText }
+        };
+
+        // Actualizar homeItems si existe
+        const updatedHomeItems = current.homeItems?.map(i =>
+            i.id === id ? { ...i, title: updatedTitle } : i
+        );
+
+        await saveAppData({
+            ...current,
+            notes: updatedNotes,
+            homeItems: updatedHomeItems
+        });
+    };
 
     const handleSave = () => {
         saveAppData({ nota: text, notaTitle: title });
         navigation.goBack();
     };
+
     const handleClear = () => {
         
+    };
+
+    const handleEndEditing = () => {
+        saveNoteData(title, text);
     };
 
     return (
@@ -76,6 +108,7 @@ export default function NoteScreen({ route, navigation }) {
                 icon="document-text-sharp"
                 title={title}
                 setTitle={setTitle}
+                endEditing={handleEndEditing}
             />
             <View style={[styles.keyboardArea, { paddingBottom: keyboardHeight }]}>
                 <View style={styles.container}>

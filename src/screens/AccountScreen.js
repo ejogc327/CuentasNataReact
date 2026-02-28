@@ -55,17 +55,24 @@ export default function AccountScreen({ route, navigation }) {
     useEffect(() => {
         if (!id) return;
         const save = async () => {
-            const data = await getAppData();
+            const current = await getAppData();
             const updatedAccounts = {
-                ...data.accounts,
-                [id]: { title, items: accounts }
+                ...current.accounts,
+                [id]: { title, accounts }
             };
-            await saveAppData({ accounts: updatedAccounts });
+            const updatedHomeItems = current.homeItems?.map(i =>
+                i.id === id ? { ...i, title } : i
+            );
+            await saveAppData({
+				...current,
+				accounts: updatedAccounts,
+				homeItems: updatedHomeItems
+			});
         };
         save();
     }, [accounts, title]);
 
-    // 🔥 Auto-scroll cuando arrastras cerca de los bordes
+    // Auto-scroll cuando arrastras cerca de los bordes
     useEffect(() => {
         if (!moveMode || !dragging || !dropPos) {
             if (scrollInterval.current) {
@@ -170,6 +177,27 @@ export default function AccountScreen({ route, navigation }) {
             inputRefs.current[editingId].focus();
         }
     }, [editingId]);
+    
+    const saveAccountData = async (updatedTitle, updatedItems) => {
+        const current = await getAppData();
+
+        // Actualizar la lista específica
+        const updatedAccounts = {
+            ...current.accounts,
+            [id]: { title: updatedTitle, items: updatedItems }
+        };
+
+        // Actualizar homeItems si existe
+        const updatedHomeItems = current.homeItems?.map(i =>
+            i.id === id ? { ...i, title: updatedTitle } : i
+        );
+
+        await saveAppData({
+            ...current,
+            accounts: updatedAccounts,
+            homeItems: updatedHomeItems
+        });
+    };
 
     const addAccount = () => {
         setAccounts([...accounts, { 
@@ -201,6 +229,10 @@ export default function AccountScreen({ route, navigation }) {
 
     const handleConfirm = () => {
         setMoveMode(false);
+    };
+
+    const handleEndEditing = () => {
+        saveAccountData(title, accounts);
     };
     
     const handleDelete = () => {
@@ -280,12 +312,12 @@ export default function AccountScreen({ route, navigation }) {
                                 
                 {moveMode ? (
                     // Cuando estamos en moveMode, solo mostramos texto plano
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                         <Text style={styles.textInput}>{item.text}</Text>
                         <Text style={styles.numInput}>{item.value}</Text>
                     </View>
                 ) : (
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                         {/* Input de texto */}
                         {editingId?.type === 'text' && editingId.id === item.id ? (
                             <TextInput
@@ -347,7 +379,7 @@ export default function AccountScreen({ route, navigation }) {
                                         }
                                     ]}
                                 >
-                                    {item.value}
+                                    {item.value || '0'}
                                 </Text>
                             </TouchableOpacity>
                         )}
@@ -382,6 +414,7 @@ export default function AccountScreen({ route, navigation }) {
                 icon="calculator-sharp"
                 title={title}
                 setTitle={setTitle}
+                endEditing={handleEndEditing}
             />
             <View style={[styles.keyboardArea, { paddingBottom: keyboardHeight }]}>
                 <View 
@@ -479,7 +512,7 @@ const makeStyles = (theme) => StyleSheet.create({
     },
     container: { 
         flex: 1, 
-        padding: 20 
+        padding: 10 
 
     },
     addButton: {
@@ -499,26 +532,26 @@ const makeStyles = (theme) => StyleSheet.create({
         height: ITEM_HEIGHT,
         flexDirection: 'row', 
         alignItems: 'center',
-        paddingHorizontal: 4, // 🔥 Aumentado para mejor padding
+        paddingHorizontal: 2, // 🔥 Aumentado para mejor padding
         paddingVertical: 2, 
         backgroundColor: '#eee', // 🔥 Background por defecto
     },
     dropdown: { 
-        marginRight: 10,
+        marginRight: 2,
         width: 30,
         alignItems: 'center',
     },
     dragHandle: {
-        width: 44,
+        width: 28,
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 6,
+        marginRight: 2,
     },
     textInput: {
         flex: 1, 
-        paddingHorizontal: 4, 
-        marginHorizontal: 2, 
+        paddingHorizontal: 2, 
+        marginHorizontal: 1, 
         fontSize: 14,
         paddingBottom: 8,
         color: theme.text,

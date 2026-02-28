@@ -6,6 +6,9 @@ import HomeToolbar from '../components/HomeToolbar';
 import SelectionToolbar from '../components/SelectionToolbar';
 import CustomModal from '../components/CustomModal';
 import ListItem from '../components/ListItem';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +44,16 @@ export default function HomeScreen({ navigation }) {
     useEffect(() => {
         saveAppData({ homeItems: items });
     }, [items]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', async () => {
+            const data = await getAppData();
+            if (data.homeItems) {
+                setItems(data.homeItems);
+            }
+        });
+        return unsubscribe;
+    }, [navigation]);
 
     // Abrir el modal
     const handleButtonPress = (source, item) => {
@@ -162,19 +175,109 @@ export default function HomeScreen({ navigation }) {
     };
 
     const exportAllAsJSON = async () => {
-        const data = await getAppData();
-        const json = JSON.stringify(data, null, 2);
-        await Clipboard.setStringAsync(json);
+        try {
+            const data = await getAppData();
+            const exportData = {
+                app: "CuentasNata",
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: data
+            };
+            const json = JSON.stringify(exportData, null, 2);
+
+            const date = new Date().toISOString().split('T')[0];
+            const fileUri = FileSystem.documentDirectory + `backup-${date}.json`;
+
+            await FileSystem.writeAsStringAsync(fileUri, json);
+
+            await Sharing.shareAsync(fileUri);
+
+        } catch (error) {
+            console.error("Error exportando JSON:", error);
+        }
+    };
+
+    const exportSelected = async (options) => {
+        try {
+            const fullData = await getAppData();
+
+            const selectedData = {};
+
+            if (options.lists) {
+            selectedData.lists = fullData.lists;
+            }
+
+            if (options.settings) {
+                selectedData.settings = fullData.settings;
+            }
+
+            if (options.categories) {
+                selectedData.categories = fullData.categories;
+            }
+
+            const exportData = {
+                app: "CuentasNata",
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: selectedData
+            };
+
+            const json = JSON.stringify(exportData, null, 2);
+
+            const date = new Date().toISOString().split('T')[0];
+            const fileUri = FileSystem.documentDirectory + `backup-${date}.json`;
+
+            await FileSystem.writeAsStringAsync(fileUri, json);
+
+            await Sharing.shareAsync(fileUri);
+
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const importJSON = async () => {
-        const text = await Clipboard.getStringAsync();
         try {
-            const data = JSON.parse(text);
-            await saveAppData(data);
-            if (data.homeItems) setItems(data.homeItems);
-        } catch (e) {
-            // JSON inválido
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/json',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) return;
+
+            const fileUri = result.assets?.[0]?.uri;
+
+            if (!fileUri) {
+                alert("No se pudo obtener el archivo");
+                return;
+            }
+
+            const fileContent = await FileSystem.readAsStringAsync(fileUri);
+
+            const parsedData = JSON.parse(fileContent);
+
+            if (parsedData.app !== "CuentasNata") {
+                alert("Este archivo no pertenece a la app");
+                return;
+            }
+
+            const currentData = await getAppData();
+
+            const mergedData = {
+                ...currentData,
+                ...parsedData.data, // solo sobreescribe lo que venga en el backup
+            };
+
+            await saveAppData(mergedData);
+
+            if (mergedData.homeItems) {
+                setItems(mergedData.homeItems);
+            }
+
+            alert("Importación completada");
+        } catch (error) {
+            console.error("Error importando JSON:", error);
+            alert("El archivo no es válido o está corrupto");
         }
     };
 

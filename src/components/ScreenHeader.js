@@ -2,7 +2,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-export default function ScreenHeader({ navigation, icon, title, setTitle }) {
+export default function ScreenHeader({ navigation, icon, title, setTitle, endEditing }) {
     const { theme } = useTheme();
     const styles = makeStyles(theme);
 
@@ -21,6 +21,7 @@ export default function ScreenHeader({ navigation, icon, title, setTitle }) {
                 style={styles.titleInput}
                 value={title}
                 onChangeText={setTitle}
+                onEndEditing={endEditing}
                 placeholder="Sin título"
                 maxLength={50}
             />

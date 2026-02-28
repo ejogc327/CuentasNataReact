@@ -57,12 +57,19 @@ export default function ListScreen({ route, navigation }) {
                 ...current.lists,
                 [id]: { title, items }
             };
-            await saveAppData({ lists: updatedLists });
+            const updatedHomeItems = current.homeItems?.map(i =>
+                i.id === id ? { ...i, title } : i
+            );
+            await saveAppData({
+				...current,
+				lists: updatedLists,
+				homeItems: updatedHomeItems
+			});
         };
         save();
     }, [items, title]);
 
-    // 🔥 Auto-scroll cuando arrastras cerca de los bordes
+    // Auto-scroll cuando arrastras cerca de los bordes
     useEffect(() => {
         if (!moveMode || !dragging || !dropPos) {
             if (scrollInterval.current) {
@@ -168,6 +175,27 @@ export default function ListScreen({ route, navigation }) {
         }
     }, [editingId]);
 
+    const saveListData = async (updatedTitle, updatedItems) => {
+        const current = await getAppData();
+
+        // Actualizar la lista específica
+        const updatedLists = {
+            ...current.lists,
+            [id]: { title: updatedTitle, items: updatedItems }
+        };
+
+        // Actualizar homeItems si existe
+        const updatedHomeItems = current.homeItems?.map(i =>
+            i.id === id ? { ...i, title: updatedTitle } : i
+        );
+
+        await saveAppData({
+            ...current,
+            lists: updatedLists,
+            homeItems: updatedHomeItems
+        });
+    };
+
     const addItem = () => {
         if (!text.trim()) return;
         const newId = Date.now().toString();
@@ -209,6 +237,10 @@ export default function ListScreen({ route, navigation }) {
     const handleConfirm = () => {
         setMoveMode(false);
     }
+
+    const handleEndEditing = () => {
+        saveListData(title, items);
+    };
 
     const handleDragStart = useCallback((item) => {
         setDraggedItemId(item.id);
@@ -320,6 +352,7 @@ export default function ListScreen({ route, navigation }) {
                 icon="list-sharp"
                 title={title}
                 setTitle={setTitle}
+                endEditing={handleEndEditing}
             />
             <View style={[styles.keyboardArea, { paddingBottom: keyboardHeight }]}>
                 <View 
@@ -400,7 +433,7 @@ const makeStyles = (theme) => StyleSheet.create({
     },
     container: { 
         flex: 1, 
-        padding: 20 
+        padding: 10 
     },
     header: { 
         fontSize: 20, 
@@ -446,10 +479,11 @@ const makeStyles = (theme) => StyleSheet.create({
         backgroundColor: theme.bg,
     },
     dragHandle: {
-        width: 44,
+        width: 28,
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 2,
     },
     itemText: { 
         flex: 1, 
